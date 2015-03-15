@@ -1,0 +1,361 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Channel Player</title>
+	<link rel="stylesheet" type="text/css" href="/static/css/screen.css">
+	<script src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script type="text/javascript" src="/static/js/jquery.tubeplayer.js"></script>
+</head>
+
+<body>
+	<div class="header_container">
+		<div class="header">
+			Reddit Player
+		</div>
+	</div>
+	<div class="players_container">
+		<div class="players"></div>
+		<div class="controls">
+			<div class="previous" title="Previous"></div>
+			<div class="next" title="Next"></div>
+		</div>
+	</div>
+	
+	<div class="numbers_container">		
+		<div class="numbers">
+		</div>
+	</div>
+	
+	<div class="overlay_container">
+		<div class="overlay_background"></div>
+		<div class="overlay_content">
+			<p>
+				Loading <span class="subreddit"></span>...
+				<br>
+				<img src="/static/img/ajax-loader-black.gif" width="16" height="11">
+			</p>
+		</div>
+	</div>
+</body>
+
+<script>
+//	Create a video position marker
+var playlist_position = 0;
+
+//	Create var for video size
+var video_size = 640;
+
+//	Create var for videos from the PHP up top
+var videos = [];
+
+//	Create an after value for the reddit loader
+var after = '';
+
+//	Variable for loading
+var loading = false;
+
+//	Subreddit string
+var subreddit = 'liquiddnb';
+
+//	Get the subreddit string from hash
+if(window.location.hash && window.location.hash != '')
+	subreddit = window.location.hash.substr(1);
+	
+//	Volume
+var volume = 75;
+
+$(function()
+{
+	//	Set the subreddit text for the initial loader
+	$('.overlay_content .subreddit').html('/r/'+subreddit);
+	
+	//	Show the initial loading screen...
+	$('.overlay_container').show();
+	
+	//	Make call to loader
+	$.get('/loader?subreddit='+subreddit, function(data)
+	{
+		//	Add the videos
+		add_videos(data.videos);
+		
+		//	Set after value
+		after = data.after;
+		
+		//	Set the video that is at the playlist position to active
+		$($('.players_container .players .player')[playlist_position]).addClass('active').css('opacity', '1.0');
+		$($('.numbers_container .numbers .number')[playlist_position]).addClass('active');
+		
+		//	Set the left margin of the players inner container
+		$('.players_container .players').css('margin-left', ((($(window).width() / 2) - (video_size / 2)) - (video_size * playlist_position)) + 'px');
+		$('.numbers_container .numbers').css('margin-left', ((($(window).width() / 2) - (40 / 2)) - (40 * playlist_position)) + 'px');
+		
+		//	Set the current position video to active
+		set_video();
+		
+		//	Fade out the loading screen
+		$('.overlay_container').fadeOut();
+	});
+	
+	//	Bind the window resize so we can reconfigure the players position
+	$(window).resize(function()
+	{
+		//	Set the left margin of the players inner container
+		$('.players_container .players').css('margin-left', ((($(window).width() / 2) - (video_size / 2)) - (video_size * playlist_position)) + 'px');
+	});
+	
+	//	Bind the clicks on previous button
+	$('.controls .previous').bind('click', function()
+	{
+		previous_video();
+	});
+	
+	//	Bind the clicks on next button
+	$('.controls .next').bind('click', function()
+	{
+		next_video();
+	});
+	
+	//	Bind the tubeplayer global ready
+	$.tubeplayer.defaults.afterReady = function(player)
+	{
+		//	Remove any videos that arent the active
+		unset_video();
+	};
+	
+	//	Bind click on a number
+	$('.numbers_container .numbers .number').live('click', function()
+	{
+		if($(this).hasClass('loading'))
+		{
+		}
+		else
+		{
+			jump_to($(this).html() - 1);
+		}
+	});
+	
+	//	Bind click on the subreddit box
+	$('.subreddit').live('click', function()
+	{
+		window.open("http://reddit.com"+$(this).html());
+	});
+});
+
+//	Function to move the player along one...
+function next_video()
+{
+	//	Check to see if there is a video next...
+	if($($('.players_container .players .player')[playlist_position]).next('.player').size() == 0)
+		return false;
+	
+	//	We have a next video, mark all the videos as inactive
+	$('.players_container .players .player').removeClass('active').animate({'opacity': '0.3'}, 100);
+	
+	//	Increment the position
+	playlist_position++;
+	
+	$('.numbers_container .numbers').stop(true, true).animate({'margin-left': '-=' + 40 + 'px'}, 800, "swing");
+	
+	$('.numbers_container .numbers .number').removeClass('active');
+	$($('.numbers_container .numbers .number')[playlist_position]).addClass('active');
+	
+	//	Animate the panel
+	$('.players_container .players').stop(true, true).animate({'margin-left': '-=' + video_size + 'px'}, 800, "swing", function()
+	{
+		//	Set the video that is at the playlist position to active
+		$($('.players_container .players .player')[playlist_position]).addClass('active').animate({'opacity': '1.0'}, 100, function()
+		{
+			set_video()
+		});
+	});
+}
+
+//	Function to move the player back one...
+function previous_video()
+{
+	//	Check to see if there is a video next...
+	if($($('.players_container .players .player')[playlist_position]).prev('.player').size() == 0)
+		return false;
+
+	//	We have a next video, mark all the videos as inactive
+	$('.players_container .players .player').removeClass('active').animate({'opacity': '0.3'}, 100);
+	
+	//	Increment the position
+	playlist_position--;
+	
+	$('.numbers_container .numbers').stop(true, true).animate({'margin-left': '+=' + 40 + 'px'}, 800, "swing");
+	
+	$('.numbers_container .numbers .number').removeClass('active');
+	$($('.numbers_container .numbers .number')[playlist_position]).addClass('active');
+
+	//	Animate the panel
+	$('.players_container .players').stop(true, true).animate({'margin-left': '+=' + video_size + 'px'}, 800, "swing", function()
+	{
+		//	Set the video that is at the playlist position to active
+		$($('.players_container .players .player')[playlist_position]).addClass('active').animate({'opacity': '1.0'}, 100, function()
+		{
+			set_video()
+		});
+	});
+} 
+
+//	Function to remove all active videos
+function unset_video()
+{
+	$('.players_container .players .player .ytplayer').each(function()
+	{
+		if($(this).parents('.player').hasClass('active'))
+		{
+		}
+		else
+		{
+			$(this).tubeplayer('destroy');
+		}
+	});
+}
+
+//	Function to set the video as active
+function set_video()
+{	
+	//	Set the YT video
+	$($('.players_container .players .player .ytplayer')[playlist_position]).tubeplayer(
+	{
+		width: 640,
+		height: 360,
+		allowFullScreen: "false",
+		initialVideo: videos[playlist_position].id,
+		preferredQuality: "hd720",
+		showControls: 1,
+		autoHide: false, 
+		autoPlay: true,
+		iframed: true,
+		theme: "dark",
+		color: "white",
+		//onPlayerUnstarted: function(){ $($('.players_container .players .player .ytplayer')[playlist_position]).tubeplayer("volume", volume); },
+		onPlayerEnded: function(id){next_video()},
+		onErrorNotFound: function(id){next_video()},
+		onErrorNotEmbeddable: function(id){next_video()},
+		onErrorInvalidParameter: function(id){next_video()}
+	});
+	
+	
+	//	Are we at the last video? Load more!
+	if($($('.players_container .players .player')[playlist_position])[0] == $('.players_container .players .player').last().prev()[0] || 
+	$($('.players_container .players .player')[playlist_position])[0] == $('.players_container .players .player').last()[0])
+		load_more();
+		
+}
+
+//	Jump to video
+function jump_to(position)
+{	
+	//	Check to see if there is a video next...
+	if($($('.players_container .players .player')[position]).size() == 0)
+		return false;
+		
+	//	Set the new position
+	playlist_position = position;
+	
+	//	We have a next video, mark all the videos as inactive
+	$('.players_container .players .player').removeClass('active').animate({'opacity': '0.3'}, 100);
+	
+	$('.numbers_container .numbers').animate({'margin-left': ((($(window).width() / 2) - (40 / 2)) - (40 * playlist_position)) + 'px'}, 800, "swing");
+	
+	$('.numbers_container .numbers .number').removeClass('active');
+	$($('.numbers_container .numbers .number')[playlist_position]).addClass('active');
+		
+	//	Set the left margin of the players inner container
+	$('.players_container .players').animate({'margin-left': ((($(window).width() / 2) - (video_size / 2)) - (video_size * playlist_position)) + 'px'}, 800, "swing", function()
+	{
+		//	Set the video that is at the playlist position to active
+		$($('.players_container .players .player')[playlist_position]).addClass('active').animate({'opacity': '1.0'}, 100, function()
+		{
+			set_video()
+		});
+	});
+}
+
+//	Function to add videos from an array
+function add_videos(video_array)
+{	
+	//	Loop the videos and create the video blocks
+	$.each(video_array, function(key, value)
+	{	
+		//	Create element
+		var player = $('<div class="player" title="'+value.title+'"><div class="title">'+value.title+'</div><div class="subreddit">/r/'+value.subreddit+'</div><div class="ytplayer"></div><div class="youtube-bar"></div></div>');
+		
+		//	Set background image
+		player.css('background-image', 'url('+value.artwork+')');
+		
+		//	Append the player
+		$('.players').append(player);
+		
+		//	Add a video number
+		$('.numbers').append('<div class="number" title="'+value.title+'"> ' + (videos.length + (key + 1)) + '</div>');
+	});
+
+	$('.numbers').width(($('.number').length * 40) + 40);
+	$('.players').width($('.player').length * video_size);
+	
+	//	Merge the video array with the main videos
+	$.merge(videos, video_array);
+}
+
+//	Function to load more!
+function load_more()
+{
+	//	Check if loading
+	if(loading)
+		return;
+		
+	//	Set loading
+	loading = true;
+	
+	//	Append the loading number...
+	$('.numbers').append('<div class="number loading" title="Loading..."><img src="/static/img/ajax-loader-blue.gif" width="16" height="11" style="margin-top:-2px;"></div>');
+	
+	//	Make call to loader
+	$.get('/loader?subreddit='+subreddit+'&after='+after, function(data)
+	{
+		//	Remove the loading number
+		$('.numbers .number.loading').remove();
+				
+		//	Add the videos
+		add_videos(data.videos);
+		
+		//	Set after value
+		after = data.after;
+		
+		//	Unset loading
+		loading = false;
+	});
+}
+
+function fade_out()
+{
+	//	Get the current volume to use later
+	volume = $($('.players_container .players .player .ytplayer')[playlist_position]).tubeplayer("volume");
+	
+	//	Create an interval timer
+	var fade_out_timer = setInterval(function(){
+	
+		var current_volume = $($('.players_container .players .player .ytplayer')[playlist_position]).tubeplayer("volume");
+
+		if(current_volume > 1)
+		{
+			current_volume = current_volume - 1;
+			$($('.players_container .players .player .ytplayer')[playlist_position]).tubeplayer("volume", current_volume);
+		}
+		else
+		{
+			clearInterval(fade_out_timer);
+		}
+		
+	}, 50);
+}
+
+</script>
+
+</html>

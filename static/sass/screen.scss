@@ -1,0 +1,51 @@
+/* Welcome to Compass.
+ * In this file you should write your main styles. (or centralize your imports)
+ * Import this file using the following HTML or equivalent:
+ * <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css" /> */
+
+/* Imports */
+@import "_normalize";
+@import "_foundation";
+@import "compass/css3";
+
+/* Body styles */
+body { margin:0; padding:0; background-color: #EBEBEB; font-family: Trebuchet MS; font-weight:bold; }
+
+/* Container of page header elements */
+.header_container { height:62px; }
+.header_container .header { width: 640px; margin:auto auto; vertical-align:bottom; height:62px; line-height:60px; }
+
+/* Container of player header elments */
+.players_header_container { height:70px; }
+
+/* Container of player elements */
+.players_container { background-color: #444; height:360px; overflow:hidden; position:relative; }
+
+/* Controls container */
+.players_container .controls { position:absolute; width:900px; height:360px; left:50%; margin-left:-450px; pointer-events:none; }
+.players_container .controls .previous { height: 360px; width:90px; float:left; cursor:pointer; pointer-events:auto; background-image:url(/static/img/previous.png); }
+.players_container .controls .next { height: 360px; width:90px; float:right; cursor:pointer; pointer-events:auto; background-image:url(/static/img/next.png); }
+
+/* Players holder */
+.players_container .players { position:absolute; white-space:nowrap; height:360px; }
+
+/* Player DIV */
+.players_container .players .player { width:640px; height:360px; background-color:#000; float:left; opacity:0.3; background-size:cover; background-position:center center; }
+.players_container .players .player .title { background-color:#000; color:#FFFFFF; padding:10px; position:absolute; border-radius:5px; margin-top:10px; margin-left:10px; max-width:600px; overflow:hidden; opacity:0.8; }
+.players_container .players .player .subreddit { background-color:#000; color:#FFFFFF; padding:10px; position:absolute; border-radius:5px; margin-top:55px; margin-left:10px; max-width:600px; overflow:hidden; opacity:0.8; }
+
+/* Numbers Div */
+.numbers_container { height:40px; position:relative; overflow:hidden; margin-top:5px; white-space:nowrap; }
+.numbers { height:40px; white-space:nowrap; position:absolute; }
+.numbers .number { float:left; height:16px; width:30px; line-height:16px; text-align:center; background-color:#000000; color:#FFF; margin:5px; border-radius:3px; cursor:pointer; font-size:11px; }
+.numbers .number.active { background-color:#CC0000; }
+.numbers .number.loading { cursor:default; background-color:#0000CC; }
+
+/* Overlay */
+.overlay_container { position:absolute; left:0; top:0; width:100%; height:100%; display:none; }
+.overlay_container .overlay_background { position:absolute; width:100%; height:100%; background-color:#FFF; opacity:0.90; }
+.overlay_container .overlay_content { position:absolute; height:60px; width:200px; left:50%; top:50%; margin-left:-100px; margin-top:-30px; background-color:#000; border-radius:3px; color:#FFF; }
+.overlay_container .overlay_content p { padding:10px; margin:0; text-align:center; font-weight:normal; }
+
+/* Youtube bar */
+.youtube-bar { width: 640px; height: 35px; background-image:url(/static/img/YoutubeBar.png); position: absolute; bottom: 0px; z-index: -1; }
